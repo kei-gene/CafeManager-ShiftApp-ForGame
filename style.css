@@ -1,0 +1,100 @@
+/* Café Shift Board — espresso / latte / matcha */
+:root{
+  --espresso:#3a271f; --roast:#5a3d2e; --latte:#efe4d3; --foam:#fbf6ee; --milk:#fffdf9;
+  --matcha:#6c8b55; --matcha-d:#4f6b3d; --berry:#b4474f; --line:#dccdb6; --ink:#2f211a; --sub:#8a7463; --hatch:#e6d9c4;
+  --r:16px;
+  --font:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic UI",Meiryo,sans-serif;
+  --serif:"Fraunces","Hiragino Mincho ProN","Yu Mincho",Georgia,serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{
+  margin:0;color:var(--ink);font:14px/1.6 var(--font);
+  background:
+    radial-gradient(circle at 1px 1px,rgba(90,61,46,.07) 1px,transparent 1.5px) 0 0/22px 22px,
+    var(--latte);
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:1.5px solid var(--line);background:var(--milk);border-radius:999px;padding:7px 16px;transition:transform .12s,border-color .12s,background .12s}
+button:hover{border-color:var(--roast)}
+button:active{transform:translateY(1px)}
+button.pri{background:var(--matcha);border-color:var(--matcha);color:#fff;font-weight:700}
+button.pri:hover{background:var(--matcha-d);border-color:var(--matcha-d)}
+button.x{padding:4px 12px;color:var(--sub);font-size:12px}
+button.x:hover{color:var(--berry);border-color:var(--berry)}
+input,select{background:var(--milk);border:1.5px solid var(--line);border-radius:10px;padding:6px 10px;min-width:0}
+input:focus,select:focus{outline:none;border-color:var(--matcha);box-shadow:0 0 0 3px rgba(108,139,85,.22)}
+:focus-visible{outline:2px solid var(--matcha-d);outline-offset:2px}
+
+/* ヘッダー：メニューボード */
+.board{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 28px;background:var(--espresso);color:var(--foam);border-bottom:6px double #8b6a4f}
+.brand{display:flex;align-items:center;gap:14px}
+.cup{font-size:30px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.3))}
+.board h1{margin:0;font:600 26px/1.1 var(--serif);letter-spacing:.02em}
+.board p{margin:2px 0 0;color:#cdb79d;font-size:12px}
+.ghost{background:transparent;border-color:#7d5f4a;color:#e8d7c0}
+.ghost:hover{border-color:#fff;color:#fff}
+
+main{max-width:1280px;margin:0 auto;padding:22px 18px 48px;display:grid;gap:20px}
+
+/* 集計：レシート風 */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+.stat{background:var(--milk);border:1.5px dashed #c9b497;border-radius:var(--r);padding:12px 16px 12px;position:relative}
+.stat span{display:block;color:var(--sub);font-size:12px}
+.stat b{display:block;font:600 24px/1.3 var(--serif);font-variant-numeric:tabular-nums}
+.stat.good b{color:var(--matcha-d)}
+.stat.bad b{color:var(--berry)}
+
+.panel{background:var(--foam);border:1.5px solid var(--line);border-radius:22px;padding:20px 22px;box-shadow:0 6px 0 -2px #e3d5bf}
+.panel h2{margin:0 0 12px;font:600 20px/1.2 var(--serif)}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.bar h2{margin:0}
+.bar .sp{flex:1}
+.bar label{display:flex;align-items:center;gap:6px;color:var(--sub)}
+
+/* 作業表 */
+.wrap{overflow:auto;border-radius:var(--r);background:var(--milk);border:1.5px solid var(--line);padding:6px}
+table{border-collapse:separate;border-spacing:3px;width:100%}
+th,td{text-align:center;padding:0}
+thead th{font-size:12px;color:var(--sub);font-weight:500;padding:4px 0}
+th.n{position:sticky;left:0;z-index:2;background:var(--milk);text-align:left;padding:6px 10px 6px 4px;min-width:150px;max-width:176px}
+th.n b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+th.n i{font-style:normal;font-size:11px;color:var(--sub)}
+td.c{min-width:44px;height:46px;border-radius:10px;cursor:pointer;user-select:none;background:var(--milk);border:1.5px solid var(--line)}
+td.c.av{background:color-mix(in srgb,var(--rc) 18%,var(--milk));border-color:color-mix(in srgb,var(--rc) 40%,var(--line))}
+td.c.no{background:repeating-linear-gradient(135deg,var(--hatch) 0 4px,transparent 4px 9px);border-color:transparent}
+td.c.on{background:var(--rc);border-color:var(--rc);color:#fff;font-size:11px;font-weight:700;box-shadow:0 2px 0 rgba(0,0,0,.22)}
+td.c:hover{border-color:var(--roast)}
+tfoot th,tfoot td{font-size:12px;height:36px}
+tfoot td{background:var(--foam);border-radius:8px}
+tfoot td.low{color:var(--berry);font-weight:700;background:#f8e2de}
+tfoot input{width:100%;min-width:44px;border:0;background:transparent;text-align:center;padding:4px 0;border-radius:8px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;color:var(--sub);font-size:12px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:5px;vertical-align:-1px}
+
+/* スタッフ・役割 */
+.two{display:grid;grid-template-columns:1.7fr 1fr;gap:20px;align-items:start}
+.rrow{display:grid;grid-template-columns:42px 1fr auto;gap:8px;align-items:center;margin-bottom:8px}
+.rrow input[type=color]{padding:2px;height:36px;width:42px;border-radius:50%}
+.add{margin-top:12px}
+.empty{padding:30px;text-align:center;color:var(--sub)}
+
+/* スタッフカード */
+.emp{border:1.5px solid var(--line);border-radius:var(--r);background:var(--milk);padding:12px 14px;margin-bottom:12px}
+.emp-top{display:grid;grid-template-columns:1.2fr 1fr 110px auto;gap:10px;align-items:end}
+.emp label,.slot label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--sub)}
+.emp label input,.emp label select{font-size:14px;color:var(--ink);width:100%}
+.slots{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
+.sl-title{font-size:12px;color:var(--sub);font-weight:700}
+.slot{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap}
+.slot .to{padding-bottom:7px;color:var(--sub)}
+.add-slot{border-style:dashed}
+@media (max-width:900px){.two{grid-template-columns:1fr}}
+@media (max-width:640px){
+  .board{padding:14px 16px}
+  .emp-top{grid-template-columns:1fr 1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}

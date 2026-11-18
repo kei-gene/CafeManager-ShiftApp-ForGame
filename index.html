@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CafeManager 作業表</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="board">
+  <div class="brand">
+    <span class="cup" aria-hidden="true">☕</span>
+    <div><h1>Café Shift Board</h1><p>今日の作業表・USD</p></div>
+  </div>
+  <button id="reset" class="ghost">初期化</button>
+</header>
+
+<main>
+  <section class="stats" id="stats" aria-label="集計"></section>
+
+  <section class="panel">
+    <div class="bar">
+      <h2>今日のシフト</h2>
+      <span class="sp"></span>
+      <label>営業 <select id="open"></select> 〜 <select id="close"></select></label>
+      <button id="fill">希望どおりに入れる</button>
+      <button id="clear">全部空にする</button>
+    </div>
+    <div class="wrap" id="grid"></div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <div class="two">
+    <section class="panel">
+      <h2>スタッフ</h2>
+      <div id="emps"></div>
+      <button class="pri add" id="addEmp">＋ スタッフを追加</button>
+    </section>
+    <section class="panel">
+      <h2>役割</h2>
+      <div id="roles"></div>
+      <button class="add" id="addRole">＋ 役割を追加</button>
+    </section>
+  </div>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
