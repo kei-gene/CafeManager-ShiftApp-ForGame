@@ -27,8 +27,10 @@
       <span class="sp"></span>
       <label>営業 <select id="open"></select> 〜 <select id="close"></select></label>
       <button id="fill">希望どおりに入れる</button>
+      <button id="auto">優先順位で仕事を自動割り当て</button>
       <button id="clear">全部空にする</button>
     </div>
+    <div class="palette" id="palette"></div>
     <div class="wrap" id="grid"></div>
     <div class="legend" id="legend"></div>
   </section>
@@ -37,15 +39,26 @@
     <section class="panel">
       <h2>スタッフ</h2>
       <div id="emps"></div>
-      <button class="pri add" id="addEmp">＋ スタッフを追加</button>
+      <div class="btns"><button class="pri add" id="addEmp">＋ スタッフを追加</button><button class="add" id="openBulk">一括登録</button></div>
     </section>
     <section class="panel">
-      <h2>役割</h2>
+      <h2>役割と、その中の仕事</h2>
       <div id="roles"></div>
       <button class="add" id="addRole">＋ 役割を追加</button>
     </section>
   </div>
 </main>
+<dialog id="bulk">
+  <div class="dlg">
+    <h2>スタッフを一括登録</h2>
+    <p class="hint">1行に1人、「名前, 役割, 時給(USD), 時間帯」の順に書きます。時間帯は「10:00-12:00; 15:00-21:00」のように「;」で区切ると、いくつでも書けます。Excel やスプレッドシートからのコピー（タブ区切り）もそのまま貼れます。同じ名前のスタッフは上書きします。</p>
+    <textarea id="bulkText" rows="8" spellcheck="false" placeholder="Emma,バリスタ,12,8:00-12:00; 13:00-16:00"></textarea>
+    <label class="chk"><input type="checkbox" id="bulkRoles" checked> 登録されていない役割を自動で追加する</label>
+    <p id="bulkMsg" class="bmsg" role="alert"></p>
+    <div class="bar"><button type="button" id="bulkSample">入力例を入れる</button><span class="sp"></span><button type="button" id="bulkClose">閉じる</button><button type="button" class="pri" id="bulkGo">取り込む</button></div>
+  </div>
+</dialog>
+<div id="toast" class="toast" role="status" hidden></div>
 <script src="app.js"></script>
 </body>
 </html>
