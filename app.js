@@ -17,7 +17,7 @@ const initial = () => ({
 });
 let S; try { S = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* 初回・破損時は初期化 */ }
 if (!S || !Array.isArray(S.emps)) S = initial();
-S.tasks = S.tasks || {}; S.roles.forEach(r => { r.tasks = r.tasks || []; });   // 役割の中の仕事（上ほど優先）
+S.tasks = S.tasks || {}; S.sort = S.sort || { key: 'manual', desc: false }; S.roles.forEach(r => { r.tasks = r.tasks || []; }); S.emps.forEach(e => { e.off = e.off || []; });   // off＝そのスタッフが「できない」仕事のID   // 役割の中の仕事（上ほど優先）
 const PAL = ['#8a6bb5', '#d08a1f', '#2f9aa8', '#c4552b'];
 S.emps.forEach(e => { if (!Array.isArray(e.slots)) { e.slots = [{ from: e.from ?? S.open, to: e.to ?? S.close }]; delete e.from; delete e.to; } });   // 旧データ（時間帯1つ）を移行
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* 保存できない環境 */ } };
@@ -27,6 +27,28 @@ const role = id => S.roles.find(r => r.id === id) || S.roles[0] || { name: '—'
 const onH = e => (S.sched[e.id] || []).filter(h => h >= S.open && h < S.close);
 const taskRole = id => S.roles.find(r => r.tasks.some(t => t.id === id));
 const taskName = id => { for (const r of S.roles) { const t = r.tasks.find(x => x.id === id); if (t) return t.name; } return ''; };
+const can = (e, id) => { const tr = taskRole(id); return !!tr && tr.id === e.role && !e.off.includes(id); };   // その人が、その仕事をできるか
+/* ---- 従業員の並び替え（作業表とスタッフ一覧の両方に使う） ---- */
+const SORTS = { manual: '登録順（手動）', role: '役割順', name: '名前（あいうえお）', wage: '時給', start: '出勤できる時間の早さ' };
+const SORT_VAL = { role: e => Math.max(0, S.roles.findIndex(r => r.id === e.role)), name: e => e.name, wage: e => e.wage, start: e => Math.min(...e.slots.map(s => s.from)) };
+function sortedEmps() {
+  const { key, desc } = S.sort, f = SORT_VAL[key], a = S.emps.map((e, i) => ({ e, i, v: f ? f(e) : i }));
+  a.sort((x, y) => { let c = typeof x.v === 'string' ? x.v.localeCompare(y.v, 'ja') : x.v - y.v; if (desc) c = -c; return c || x.i - y.i; });
+  return a.map(x => x.e);
+}
+function renderSort() {
+  if (!SORTS[S.sort.key]) S.sort = { key: 'manual', desc: false };
+  document.querySelectorAll('.sortsel').forEach(s => { s.innerHTML = Object.entries(SORTS).map(([k, v]) => `<option value="${k}"${k === S.sort.key ? ' selected' : ''}>${v}</option>`).join(''); });
+  document.querySelectorAll('.sortdir').forEach(b => { b.textContent = S.sort.desc ? '▼ 降順' : '▲ 昇順'; b.disabled = S.sort.key === 'manual'; });
+}
+document.addEventListener('change', ev => {
+  if (!ev.target.classList.contains('sortsel')) return;
+  S.sort = { key: ev.target.value, desc: false }; save(); renderSort(); renderGrid(); renderEmps();
+});
+document.addEventListener('click', ev => {
+  if (!ev.target.classList.contains('sortdir')) return;
+  S.sort.desc = !S.sort.desc; save(); renderSort(); renderGrid(); renderEmps();
+});
 const inSlots = (e, h) => e.slots.some(s => h >= s.from && h < s.to);
 const lab = h => (h % 24) + ':00';
 const opts = (a, b, v) => { let o = ''; for (let h = a; h <= b; h++) o += `<option value="${h}"${h === v ? ' selected' : ''}>${lab(h)}</option>`; return o; };
@@ -41,12 +63,12 @@ function renderStats() {
     ['利益（売上 − 人件費）', usd(profit), sales > 0 ? (profit >= 0 ? 'good' : 'bad') : '']
   ].map(([a, b, c]) => `<div class="stat ${c}"><span>${a}</span><b>${b}</b></div>`).join('');
 }
-const cellLabel = (e, r, h) => { const id = (S.tasks[e.id] || {})[h], tr = id && taskRole(id), tn = tr && tr.id === e.role ? taskName(id) : ''; return (tn || r.name).slice(0, 4); };
+const cellLabel = (e, r, h) => { const id = (S.tasks[e.id] || {})[h], tn = id && can(e, id) ? taskName(id) : ''; return (tn || r.name).slice(0, 4); };
 function renderGrid() {
   const H = hrs();
   if (!S.emps.length) { $('#grid').innerHTML = '<div class="empty">スタッフがまだいません。下の「＋ スタッフを追加」から登録してください。</div>'; renderStats(); return; }
   let t = '<table><thead><tr><th class="n"></th>' + H.map(h => `<th>${lab(h)}</th>`).join('') + '</tr></thead><tbody>';
-  S.emps.forEach(e => {
+  sortedEmps().forEach(e => {
     const r = role(e.role), on = new Set(onH(e)), n = on.size;
     t += `<tr><th class="n"><b>${esc(e.name)}</b><i>${esc(r.name)}・${n}h・${usd(n * e.wage)}</i></th>`;
     H.forEach(h => {
@@ -71,12 +93,12 @@ function renderLegend() {
 $('#palette').addEventListener('click', ev => { const b = ev.target.closest('[data-b]'); if (!b) return; brush = b.dataset.b; renderLegend(); });
 function renderEmps() {
   const ro = S.roles.map(r => `<option value="${r.id}">${esc(r.name)}</option>`).join('');
-  $('#emps').innerHTML = S.emps.length ? S.emps.map(e => `<div class="emp" data-id="${e.id}">
+  $('#emps').innerHTML = S.emps.length ? sortedEmps().map(e => `<div class="emp" data-id="${e.id}">
     <div class="emp-top">
       <label>名前<input data-k="name" value="${esc(e.name)}"></label>
       <label>役割<select data-k="role">${ro.replace(`value="${e.role}"`, `value="${e.role}" selected`)}</select></label>
       <label>時給 (USD)<input data-k="wage" type="number" min="0" step="any" value="${e.wage}"></label>
-      <button class="x" data-del="${e.id}">削除</button>
+      <span class="ops">${S.sort.key === 'manual' ? '<button class="x" data-mv="-1" aria-label="上へ">▲</button><button class="x" data-mv="1" aria-label="下へ">▼</button>' : ''}<button class="x" data-del="${e.id}">削除</button></span>
     </div>
     <div class="slots"><span class="sl-title">勤務できる時間</span>
       ${e.slots.map((s, i) => `<div class="slot" data-i="${i}">
@@ -84,6 +106,9 @@ function renderEmps() {
         <label>終了<select data-k="to">${opts(S.open + 1, S.close, s.to)}</select></label>
         <button class="x" data-sdel="${i}" aria-label="この時間を削除">削除</button></div>`).join('')}
       <button class="x add-slot" data-sadd="${e.id}">＋ 追加</button>
+    </div>
+    <div class="slots"><span class="sl-title">できる仕事（${esc(role(e.role).name)}の中から選ぶ）</span>
+      <div class="chips">${role(e.role).tasks.length ? role(e.role).tasks.map((t, i) => `<button class="chip${e.off.includes(t.id) ? '' : ' act'}" style="--rc:${role(e.role).color}" data-tk="${t.id}" aria-pressed="${!e.off.includes(t.id)}"><b>${i + 1}</b>${esc(t.name)}</button>`).join('') : '<span class="meta">この役割には、まだ仕事がありません。下の「役割と、その中の仕事」で追加できます。</span>'}</div>
     </div></div>`).join('') : '<div class="empty">まだ登録がありません。</div>';
 }
 function renderRoles() {
@@ -95,11 +120,11 @@ function renderRoles() {
       <button class="x add-slot" data-tadd="1">＋ 仕事を追加</button></div></div>`).join('');
 }
 function renderRange() { $('#open').innerHTML = opts(0, S.close - 1, S.open); $('#close').innerHTML = opts(S.open + 1, 28, S.close); }
-function renderAll() { renderRange(); renderGrid(); renderLegend(); renderEmps(); renderRoles(); }
+function renderAll() { renderSort(); renderRange(); renderGrid(); renderLegend(); renderEmps(); renderRoles(); }
 
 /* ---- 作業表を塗る（クリック・ドラッグ） ---- */
 let paint = null;
-const brushFor = e => (brush && taskRole(brush) && taskRole(brush).id === e.role) ? brush : '';   // 選んだ仕事は、その役割の人にだけ付く
+const brushFor = e => (brush && can(e, brush)) ? brush : '';   // 選んだ仕事は、それができる人にだけ付く
 const apply = td => {
   const e = S.emps.find(x => x.id === td.dataset.e), h = +td.dataset.h, a = S.sched[e.id] = S.sched[e.id] || [], T = S.tasks[e.id] = S.tasks[e.id] || {}, i = a.indexOf(h), tk = brushFor(e);
   if (paint === 'add') { if (i < 0) { a.push(h); delete T[h]; } if (tk) T[h] = tk; }
@@ -128,7 +153,7 @@ $('#emps').addEventListener('change', ev => {
     save(); renderGrid(); renderEmps(); return;
   }
   if (k === 'wage') e.wage = Math.max(0, +v || 0); else e[k] = v;
-  save(); renderGrid();
+  save(); renderGrid(); if (k === 'role') renderEmps();
 });
 $('#emps').addEventListener('click', ev => {
   const t = ev.target, card = t.closest('.emp'); if (!card) return;
@@ -138,11 +163,15 @@ $('#emps').addEventListener('click', ev => {
     const last = e.slots.length ? Math.max(...e.slots.map(s => s.to)) : S.open, from = last < S.close ? last : S.open;
     e.slots.push({ from, to: Math.min(S.close, from + 4) });
   } else if (t.dataset.sdel != null) { if (e.slots.length <= 1) return; e.slots.splice(+t.dataset.sdel, 1); }
-  else return;
+  else if (t.dataset.mv) { const i = S.emps.indexOf(e), j = i + +t.dataset.mv; if (j < 0 || j >= S.emps.length) return; [S.emps[i], S.emps[j]] = [S.emps[j], S.emps[i]]; }   // 手動の並べ替え
+  else if (t.closest('[data-tk]')) {   // できる仕事の切り替え
+    const id = t.closest('[data-tk]').dataset.tk, i = e.off.indexOf(id);
+    if (i < 0) { e.off.push(id); const T = S.tasks[e.id] || {}; Object.keys(T).forEach(h => { if (T[h] === id) delete T[h]; }); } else e.off.splice(i, 1);
+  } else return;
   save(); renderGrid(); renderEmps();
 });
 $('#addEmp').addEventListener('click', () => {
-  S.emps.push({ id: uid(), name: 'New ' + (S.emps.length + 1), role: (S.roles[0] || {}).id, wage: 10, slots: [{ from: S.open, to: Math.min(S.close, S.open + 8) }] });
+  S.emps.push({ id: uid(), name: 'New ' + (S.emps.length + 1), role: (S.roles[0] || {}).id, wage: 10, off: [], slots: [{ from: S.open, to: Math.min(S.close, S.open + 8) }] });
   save(); renderGrid(); renderEmps();
 });
 
@@ -188,11 +217,16 @@ function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = false; 
 $('#auto').addEventListener('click', () => {
   S.roles.forEach(r => {
     if (!r.tasks.length) return;
-    hrs().forEach(h => S.emps.filter(e => e.role === r.id && onH(e).includes(h)).forEach((e, i) => {   // その時間に働く人へ、優先度の高い仕事から1人ずつ
-      const T = S.tasks[e.id] = S.tasks[e.id] || {}; if (r.tasks[i]) T[h] = r.tasks[i].id; else delete T[h];
-    }));
+    hrs().forEach(h => {
+      const free = S.emps.filter(e => e.role === r.id && onH(e).includes(h));
+      free.forEach(e => { delete (S.tasks[e.id] = S.tasks[e.id] || {})[h]; });
+      r.tasks.forEach(t => {   // 優先度の高い仕事から、それができる人（できる仕事が少ない人を先に）へ1人ずつ
+        const c = free.filter(e => can(e, t.id)).sort((x, y) => r.tasks.filter(q => can(x, q.id)).length - r.tasks.filter(q => can(y, q.id)).length)[0];
+        if (c) { S.tasks[c.id][h] = t.id; free.splice(free.indexOf(c), 1); }
+      });
+    });
   });
-  save(); renderGrid(); toast('優先順位の高い仕事から順に割り当てました');
+  save(); renderGrid(); toast('優先順位の高い仕事から、できる人へ順に割り当てました');
 });
 
 /* ---- スタッフの一括登録 ---- */
@@ -227,10 +261,19 @@ $('#bulkGo').addEventListener('click', () => {
     if (!r && d.rn) { r = { id: uid(), name: d.rn, color: PAL[S.roles.length % PAL.length], tasks: [] }; S.roles.push(r); }
     r = r || S.roles[0];
     const ex = S.emps.find(e => e.name === d.name);
-    if (ex) { Object.assign(ex, { role: r.id, wage: d.wage, slots: d.slots }); upd++; } else { S.emps.push({ id: uid(), name: d.name, role: r.id, wage: d.wage, slots: d.slots }); add++; }
+    if (ex) { Object.assign(ex, { role: r.id, wage: d.wage, slots: d.slots }); upd++; } else { S.emps.push({ id: uid(), name: d.name, role: r.id, wage: d.wage, off: [], slots: d.slots }); add++; }
   });
   save(); renderAll(); bulk.close(); $('#bulkText').value = '';
   toast(`一括登録しました（追加${add}人${upd ? `・上書き${upd}人` : ''}）`);
 });
+
+/* ---- タブ（ホーム／従業員） ---- */
+function showTab(n) {
+  S.tab = n;
+  ['home', 'staff'].forEach(k => { const b = $(`[data-tab="${k}"]`); $('#tab-' + k).hidden = k !== n; b.classList.toggle('act', k === n); b.setAttribute('aria-selected', String(k === n)); });
+  save();
+}
+document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+showTab(S.tab === 'staff' ? 'staff' : 'home');
 
 renderAll();

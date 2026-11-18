@@ -15,16 +15,19 @@
     <span class="cup" aria-hidden="true">☕</span>
     <div><h1>Café Shift Board</h1><p>今日の作業表・USD</p></div>
   </div>
+  <nav class="tabs" role="tablist" aria-label="画面"><button class="tab" data-tab="home" role="tab">ホーム</button><button class="tab" data-tab="staff" role="tab">従業員</button></nav>
   <button id="reset" class="ghost">初期化</button>
 </header>
 
 <main>
+<div id="tab-home" class="tabpage" role="tabpanel">
   <section class="stats" id="stats" aria-label="集計"></section>
 
   <section class="panel">
     <div class="bar">
       <h2>今日のシフト</h2>
       <span class="sp"></span>
+      <label>並び順 <select class="sortsel"></select></label><button class="sortdir"></button>
       <label>営業 <select id="open"></select> 〜 <select id="close"></select></label>
       <button id="fill">希望どおりに入れる</button>
       <button id="auto">優先順位で仕事を自動割り当て</button>
@@ -35,9 +38,11 @@
     <div class="legend" id="legend"></div>
   </section>
 
+</div>
+<div id="tab-staff" class="tabpage" role="tabpanel" hidden>
   <div class="two">
     <section class="panel">
-      <h2>スタッフ</h2>
+      <div class="bar"><h2>スタッフ</h2><span class="sp"></span><label>並び順 <select class="sortsel"></select></label><button class="sortdir"></button></div>
       <div id="emps"></div>
       <div class="btns"><button class="pri add" id="addEmp">＋ スタッフを追加</button><button class="add" id="openBulk">一括登録</button></div>
     </section>
@@ -47,6 +52,7 @@
       <button class="add" id="addRole">＋ 役割を追加</button>
     </section>
   </div>
+</div>
 </main>
 <dialog id="bulk">
   <div class="dlg">
